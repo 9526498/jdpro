@@ -1,0 +1,30 @@
+name: 自动同步上游 jdpro 仓库
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 每天凌晨2点自动执行
+  workflow_dispatch:  # 允许手动在 Actions 页面触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main  # 确保同步的是主分支
+
+      - name: 配置 Git 用户信息
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@users.noreply.github.com"
+
+      - name: 添加上游仓库并拉取
+        run: |
+          git remote add upstream ${{ secrets.UPSTREAM_REPO }}
+          git fetch upstream
+
+      - name: 合并上游更新
+        run: |
+          git checkout main
+          git merge --allow-unrelated-histories upstream/main --no-edit
+          git push origin main
